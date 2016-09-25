@@ -1,0 +1,6 @@
+3.       Match your Hero; Category: Data Analytics Challenge
+<<Here>> is the Soccer Dataset containing match and player information. Of course, nobody can dare match your hero.  But, who’s got the playing genes of your Soccer Star? Analyze the Soccer Dataset to recommend players who are most similar to:
+-          Andrea Pirlo
+-          Wayne Rooney
+-          Sergio Ramos
+You are challenged to demonstrate the strength and conviction behind your recommendation along with visualization (beyond regular R charts) of the recommended players’ strengths, weaknesses and career highlights.
