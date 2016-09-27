@@ -7,6 +7,7 @@ import random
 from numpy.random import permutation
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import KDTree
 import sqlite3
 from pandas.io import sql
 import datetime as dt
@@ -18,10 +19,10 @@ global trainingData
 testData="";
 training_set=""
 csvfile=""
-out_sqlite = 'sqlite:///train.sqlite'
+out_sqlite = 'sqlite:///train1.sqlite'
 table_name = 'stats' # name for the SQLite database table
 index_start = 1
-disk_engine = create_engine(out_sqlite,echo=True)
+disk_engine = create_engine(out_sqlite,echo=False)
 df18 = "";
 chunksize = 20000
 j = 0
@@ -29,7 +30,7 @@ def load():
     index_start = 1
     start = dt.datetime.now()
     j = 1
-    for df in pd.read_csv('stats.csv', chunksize=chunksize, iterator=True, encoding='utf-8'):
+    for df in pd.read_csv('stats - Copy.csv', chunksize=chunksize, iterator=True, encoding='utf-8'):
 
         df = df.rename(columns={c: c.replace(' ', '') for c in df.columns}) # Remove spaces from columns
 
@@ -69,7 +70,7 @@ def predict():
         innerit = 1
         outerit = 1
         query = '\
-        select distinct player_fifa_api_id ,\
+        select  \
         player_api_id,\
         AVG(overall_rating),\
         AVG(potential),\
@@ -110,36 +111,58 @@ def predict():
         
         trainQuery = query +\
         ' where player_api_id not in (30829,30962,30731)\
-        group by player_fifa_api_id,player_api_id';
+        group by player_api_id';
         print('Train Query')
         #testrfchunkdf =   pd.read_sql_query(testquery,disk_engine,chunksize=10000);
         exe  = disk_engine.execute(trainQuery)
         df1 = DataFrame(exe.fetchall())
         df1.columns = exe.keys()
+        #df3 = df1.copy()
+        #df3.drop(df3.columns[[0]],inplace=True,axis=1)
+        df3=df1.ix[:,1:35]
+       
         #TOTAL TEST RECORDS ARE 25laksh;2528242
         print('Train Query complete')
-        print(df1);
+        #print(df1);
         
         testQuery = query +\
         ' where player_api_id in (30829,30962,30731)\
-        group by player_fifa_api_id,player_api_id';
+        group by player_api_id';
         print('Test Query')
         exe  = disk_engine.execute(testQuery)
         df2 = DataFrame(exe.fetchall())
         df2.columns = exe.keys()
+        df4=df2.ix[:,1:35]
         #TOTAL TEST RECORDS ARE 25laksh;2528242
         print('Test Query complete')
-        print(df2);
+        #print(df2);
         # Create the knn model.
-# Look at the five closest neighbors.
-        knn = NearestNeighbors(n_neighbors=5, algorithm='ball_tree').fit(df1.fillna(0))
+        # Look at the five closest neighbors.
+        knn = NearestNeighbors(n_neighbors=5, algorithm='kd_tree').fit(df3.fillna(0))
+        distances, indices = knn.kneighbors(df4.fillna(0))
+        print(indices);
+        print(distances)
+        #kdt = KDTree(df1.fillna(0), leaf_size=30)
+        #distances, indices=kdt.query(df2.fillna(0), k=5, return_distance=False)
         # Fit the model on the training data.
-        #knn.fit(trainQuery)
         # Make point predictions on the test set using the fit model.
-        distances, indices = knn.kneighbors(df2.fillna(0))
-        print(distances, indices)
+        
+        #print( indices)
+        #print(df1.get(indices));
+        #list(df1.index.values);
+        #print(df1.shape);
+        #print(df2.shape)
+        #print(df1.loc[[4198,3116,1861,837,5467],:])
+        #print(df1['player_api_id'])
+        #print(df1.loc[df1['player_api_id'] == 203396].index)
+        print(df1.loc[8068])
+        print(df2.loc[df2['player_api_id'] == 30829])
+        print(df2)
+        
+        #print(df1.ix[1895])
         #for testchunkdf in testrfchunkdf:
-
+#For first call uncomment load() method to run the dataload;for subsequent run comment out
+#load()
 predict()
 #cleanData()
 #predict()
