@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Tue Sep 27 15:13:20 2016
+
+@author: dt202756
+"""
+
+# -*- coding: utf-8 -*-
 
 import numpy as np,pandas as pd
 import csv
@@ -8,6 +15,7 @@ from numpy.random import permutation
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import NearestNeighbors
 from sklearn.neighbors import KDTree
+#from more_itertools import unique_everseen
 import sqlite3
 from pandas.io import sql
 import datetime as dt
@@ -30,7 +38,7 @@ def load():
     index_start = 1
     start = dt.datetime.now()
     j = 1
-    for df in pd.read_csv('stats - Copy.csv', chunksize=chunksize, iterator=True, encoding='utf-8'):
+    for df in pd.read_csv('stats.csv', chunksize=chunksize, iterator=True, encoding='utf-8'):
 
         df = df.rename(columns={c: c.replace(' ', '') for c in df.columns}) # Remove spaces from columns
 
@@ -158,6 +166,12 @@ def predict():
         print(df1.loc[8068])
         print(df2.loc[df2['player_api_id'] == 30829])
         print(df2)
+        #to slice player file to get the player names
+        df5 = pd.read_csv('player.csv')
+        header = ["player_api_id", "player_name", "player_fifa_api_id"]
+        df5.to_csv('output.csv', columns = header)
+              
+        #graph representation
         
         #print(df1.ix[1895])
         #for testchunkdf in testrfchunkdf:
