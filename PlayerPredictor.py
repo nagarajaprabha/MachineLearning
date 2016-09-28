@@ -183,13 +183,14 @@ def predict():
         legend = {0:False, 1:False, 2:False, 3:True}
         i = 0
         for s in indices:
-            pca = PCA(n_components=34)
+            pca = PCA(n_components=5)
             #print(np.array(s).tolist())
             l = np.array(s).tolist();
             #playerDF_collection[i] = pd.DataFrame(df1.ix[l,:35]);
             testDf = pd.DataFrame(df2.ix[i,:35])
             testDf = testDf.transpose()
             trainDF= pd.DataFrame(df1.ix[l,:35])
+            trainDF.reset_index();
             #print(trainDF)
             result = [testDf,trainDF]
             playerDF_collection[i] =  pd.concat(result)
@@ -199,19 +200,20 @@ def predict():
             k = 0
         for j in playerDF_collection:
             X = playerDF_collection[j].iloc[:,0]
-            Y = playerDF_collection[j].iloc[:,1:35]
+            Y = playerDF_collection[j].iloc[:,1:5]
+            Y = Y.reset_index()
             #print(Y.type)
             #print(Y.loc[4198]);
-            
+            k = k+1
             for col in range(4):
                  for key in colors:
-                     traces.append(Histogram(y=Y.loc[4198], 
+                     traces.append(Histogram(y=Y.loc[k], 
                         opacity=0.75,
                         xaxis='x%s' %(col+1),
                         marker=Marker(color=colors[key]),
                         name=key,
                         showlegend=legend[col]))
-                     k = k+1
+                    
             data = Data(traces)
             layout = Layout(barmode='overlay',
                 xaxis=XAxis(domain=[0, 0.25], title='sepal length (cm)'),
