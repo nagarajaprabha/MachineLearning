@@ -21,7 +21,7 @@ global trainingData
 testData="";
 training_set=""
 csvfile=""
-out_sqlite = 'sqlite:///train2.sqlite'
+out_sqlite = 'sqlite:///train4.sqlite'
 table_name = 'stats' # name for the SQLite database table
 index_start = 1
 disk_engine = create_engine(out_sqlite,echo=False)
@@ -32,15 +32,15 @@ def load():
     index_start = 1
     start = dt.datetime.now()
     j = 1
-    sqlite3.connect('train2.db').cursor().executescript('drop table if exists traindata;') 
+    sqlite3.connect('train4.db').cursor().executescript('drop table if exists traindata;') 
     for df in pd.read_csv('stats - Copy.csv', chunksize=chunksize, iterator=True, encoding='utf-8'):
 
         df = df.rename(columns={c: c.replace(' ', '') for c in df.columns}) # Remove spaces from columns
 
         df.index += index_start
         label_encoder = preprocessing.LabelEncoder()
-        df['defensive_work_rate'] = df['defensive_work_rate'].factorize()[0]
-        df['defensive_work_rate']=label_encoder.fit_transform(df['defensive_work_rate'])
+        #df['defensive_work_rate'] = df['defensive_work_rate'].factorize()[0]
+        #df['defensive_work_rate']=label_encoder.fit_transform(df['defensive_work_rate'])
         
         df['attacking_work_rate'] = df['attacking_work_rate'].factorize()[0]
         df['attacking_work_rate']=label_encoder.fit_transform(df['attacking_work_rate'])
@@ -50,7 +50,7 @@ def load():
         
         #print(df['defensive_work_rate'])
         j+=1
-        print ("{} seconds: completed {} rows"+str((dt.datetime.now() - start).seconds)+" \t "+str( j*chunksize))
+        #print ("{} seconds: completed {} rows"+str((dt.datetime.now() - start).seconds)+" \t "+str( j*chunksize))
 
         df.to_sql('traindata', disk_engine, if_exists='append')
         index_start = df.index[-1] + 1
@@ -85,7 +85,6 @@ def predict():
         select  \
         player_api_id,\
         AVG(preferred_foot),\
-        AVG(defensive_work_rate),\
         AVG(attacking_work_rate),\
         AVG(overall_rating),\
         AVG(potential),\
@@ -148,17 +147,36 @@ def predict():
         df2 = DataFrame(exe.fetchall())
         df2.columns = exe.keys()
         df4=df2.ix[:,1:35]
-        #TOTAL TEST RECORDS ARE 25laksh;2528242
+        
         print('Test Query complete')
         #print(df2);
         # Create the knn model.
         # Look at the five closest neighbors.
         knn = NearestNeighbors(n_neighbors=5, algorithm='kd_tree').fit(df3.fillna(0))
         distances, indices = knn.kneighbors(df4.fillna(0))
-        print(indices);
-        print(distances)
-#        for s in np.nditer(indices):
-#            print(s)
+        #print(indices);
+        #print(distances)
+        #for s in np.nditer(indices):
+         #   print(s)
+        playerDF_collection = {} 
+        i = 0
+        for s in indices:
+            #print(np.array(s).tolist())
+            l = np.array(s).tolist();
+            #playerDF_collection[i] = pd.DataFrame(df1.ix[l,:35]);
+            testDf = pd.DataFrame(df2.ix[i,:35])
+            testDf = testDf.transpose()
+            trainDF= pd.DataFrame(df1.ix[l,:35])
+            #print(trainDF)
+            result = [testDf,trainDF]
+            playerDF_collection[i] =  pd.concat(result)
+            i=i+1;
+            #Continue to plot the graph
+        #print(playerDF_collection[1]);
+                
+            #for l in np.array(s).tolist():
+            #    print(df1.loc[[l],:])
+            #df1.loc[[np.array(s)],:]
         #kdt = KDTree(df1.fillna(0), leaf_size=30)
         #distances, indices=kdt.query(df2.fillna(0), k=5, return_distance=False)
         # Fit the model on the training data.
@@ -179,7 +197,7 @@ def predict():
         #print(df1.ix[1895])
         #for testchunkdf in testrfchunkdf:
 #For first call uncomment load() method to run the dataload;for subsequent run comment out
-load()
+#load()
 predict()
 #cleanData()
 #predict()
