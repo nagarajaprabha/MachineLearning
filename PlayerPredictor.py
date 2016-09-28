@@ -13,8 +13,21 @@ import datetime as dt
 from sqlalchemy import create_engine # database connection
 from pandas import DataFrame
 from sklearn import preprocessing
+import matplotlib.pyplot as plt
 
+from sklearn.preprocessing import scale
+from sklearn.decomposition import PCA
+from sklearn import cross_validation
+from sklearn.linear_model import LinearRegression
+import seaborn as sns
 
+import plotly.plotly as py
+from plotly.graph_objs import *
+import plotly.tools as tls
+import plotly.tools as tls
+
+tls.set_credentials_file(username='PrabhaNagaraja', api_key='mzyhwxubbs')
+py.sign_in("PrabhaNagaraja", "mzyhwxubbs")
 trainingDataset = "";
 testDataset = "";
 global trainingData
@@ -28,6 +41,10 @@ disk_engine = create_engine(out_sqlite,echo=False)
 df18 = "";
 chunksize = 20000
 j = 0
+
+#Graph properties
+sns.set_style('darkgrid')
+
 def load():
     index_start = 1
     start = dt.datetime.now()
@@ -158,9 +175,15 @@ def predict():
         #print(distances)
         #for s in np.nditer(indices):
          #   print(s)
+        colors = {'Andrea Pirlo': 'rgb(31, 119, 180)', 
+          'Rooney': 'rgb(255, 127, 14)', 
+          'Ramos': 'rgb(44, 160, 44)'}
         playerDF_collection = {} 
+        traces = []
+        legend = {0:False, 1:False, 2:False, 3:True}
         i = 0
         for s in indices:
+            pca = PCA(n_components=34)
             #print(np.array(s).tolist())
             l = np.array(s).tolist();
             #playerDF_collection[i] = pd.DataFrame(df1.ix[l,:35]);
@@ -171,6 +194,52 @@ def predict():
             result = [testDf,trainDF]
             playerDF_collection[i] =  pd.concat(result)
             i=i+1;
+            #print(playerDF_collection.dType)
+            #playerDF_collection is dict type
+            k = 0
+        for j in playerDF_collection:
+            X = playerDF_collection[j].iloc[:,0]
+            Y = playerDF_collection[j].iloc[:,1:35]
+            #print(Y.type)
+            #print(Y.loc[4198]);
+            
+            for col in range(4):
+                 for key in colors:
+                     traces.append(Histogram(y=Y.loc[4198], 
+                        opacity=0.75,
+                        xaxis='x%s' %(col+1),
+                        marker=Marker(color=colors[key]),
+                        name=key,
+                        showlegend=legend[col]))
+                     k = k+1
+            data = Data(traces)
+            layout = Layout(barmode='overlay',
+                xaxis=XAxis(domain=[0, 0.25], title='sepal length (cm)'),
+                xaxis2=XAxis(domain=[0.3, 0.5], title='sepal width (cm)'),
+                xaxis3=XAxis(domain=[0.55, 0.75], title='petal length (cm)'),
+                xaxis4=XAxis(domain=[0.8, 1], title='petal width (cm)'),
+                yaxis=YAxis(title='count'),
+                title='Distribution of the different Iris flower features')
+
+            fig = Figure(data=data, layout=layout)
+            py.iplot(fig)
+            Y_reduced = pca.fit_transform(scale(Y))
+            #print(Y_reduced)
+            #pca.fit(Y_reduced)
+            var1 = np.cumsum(np.round(pca.explained_variance_ratio_, decimals=4)*100)
+            plt.plot(var1)
+            #print(var1)
+            
+            
+            
+            
+                
+            #print(playerDF_collection[j])
+            #print(j.type)
+            #X = playerDF_collection[j]
+            #Y = playerDF_collection[j].iloc[:,1:35]
+            #print(X)
+            
             #Continue to plot the graph
         #print(playerDF_collection[1]);
                 
