@@ -1,33 +1,27 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Sep 27 15:13:20 2016
-
-@author: dt202756
-"""
-
-# -*- coding: utf-8 -*-
 
 import numpy as np,pandas as pd
 import csv
 from scipy.spatial import distance
-import random
 from numpy.random import permutation
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.neighbors import NearestNeighbors
 from sklearn.neighbors import KDTree
-#from more_itertools import unique_everseen
 import sqlite3
 from pandas.io import sql
 import datetime as dt
 from sqlalchemy import create_engine # database connection
 from pandas import DataFrame
+from sklearn import preprocessing
+
+
 trainingDataset = "";
 testDataset = "";
 global trainingData
 testData="";
 training_set=""
 csvfile=""
-out_sqlite = 'sqlite:///train1.sqlite'
+out_sqlite = 'sqlite:///train2.sqlite'
 table_name = 'stats' # name for the SQLite database table
 index_start = 1
 disk_engine = create_engine(out_sqlite,echo=False)
@@ -38,13 +32,23 @@ def load():
     index_start = 1
     start = dt.datetime.now()
     j = 1
-    for df in pd.read_csv('stats.csv', chunksize=chunksize, iterator=True, encoding='utf-8'):
+    sqlite3.connect('train2.db').cursor().executescript('drop table if exists traindata;') 
+    for df in pd.read_csv('stats - Copy.csv', chunksize=chunksize, iterator=True, encoding='utf-8'):
 
         df = df.rename(columns={c: c.replace(' ', '') for c in df.columns}) # Remove spaces from columns
 
         df.index += index_start
-
-
+        label_encoder = preprocessing.LabelEncoder()
+        df['defensive_work_rate'] = df['defensive_work_rate'].factorize()[0]
+        df['defensive_work_rate']=label_encoder.fit_transform(df['defensive_work_rate'])
+        
+        df['attacking_work_rate'] = df['attacking_work_rate'].factorize()[0]
+        df['attacking_work_rate']=label_encoder.fit_transform(df['attacking_work_rate'])
+        
+        df['preferred_foot'] = df['preferred_foot'].factorize()[0]
+        df['preferred_foot']=label_encoder.fit_transform(df['preferred_foot'])
+        
+        #print(df['defensive_work_rate'])
         j+=1
         print ("{} seconds: completed {} rows"+str((dt.datetime.now() - start).seconds)+" \t "+str( j*chunksize))
 
@@ -80,6 +84,9 @@ def predict():
         query = '\
         select  \
         player_api_id,\
+        AVG(preferred_foot),\
+        AVG(defensive_work_rate),\
+        AVG(attacking_work_rate),\
         AVG(overall_rating),\
         AVG(potential),\
         AVG(crossing),\
@@ -150,6 +157,8 @@ def predict():
         distances, indices = knn.kneighbors(df4.fillna(0))
         print(indices);
         print(distances)
+#        for s in np.nditer(indices):
+#            print(s)
         #kdt = KDTree(df1.fillna(0), leaf_size=30)
         #distances, indices=kdt.query(df2.fillna(0), k=5, return_distance=False)
         # Fit the model on the training data.
@@ -163,20 +172,14 @@ def predict():
         #print(df1.loc[[4198,3116,1861,837,5467],:])
         #print(df1['player_api_id'])
         #print(df1.loc[df1['player_api_id'] == 203396].index)
-        print(df1.loc[8068])
-        print(df2.loc[df2['player_api_id'] == 30829])
-        print(df2)
-        #to slice player file to get the player names
-        df5 = pd.read_csv('player.csv')
-        header = ["player_api_id", "player_name", "player_fifa_api_id"]
-        df5.to_csv('output.csv', columns = header)
-              
-        #graph representation
+        #print(df1.loc[8068])
+        #print(df2.loc[df2['player_api_id'] == 30829])
+        #print(df2)
         
         #print(df1.ix[1895])
         #for testchunkdf in testrfchunkdf:
 #For first call uncomment load() method to run the dataload;for subsequent run comment out
-#load()
+load()
 predict()
 #cleanData()
 #predict()
